@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% load paste_tags %}
+
+{% block navbar %}
+	{% with application="search" %}
+		{{ block.super }}
+	{% endwith %}
+{% endblock %}
+
+{% block maincontent %}
+{% if form %}
+     <div class="control-group well col-md-offset-1 col-md-6">
+        <h4>Search Paste content</h4>
+	<form action="" method="POST" class="form form-search">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+               <div>{{form.non_field_errors}}</div>
+            {% endif %}
+	   <div class="control-group">
+              <div class="control">
+	           {{form.text}}
+              </div>
+           </div>
+           <div class="control-group">
+               <div class="controls">
+ 		  <button type="submit" class="brn" name="submit">Submit</button>
+               </div>
+           </div>
+	</form>
+      </div>
+{% endif %}
+{% if response %}
+    <div class="control-group col-md-10">
+	  {% for hit in response %}
+             <div class="row">
+                 <dl class="dl-horizontal">
+                 {% with hit|get:"_source" as source %}
+               	    <dt>Title:</dt> <dd>{{source.title}}</dd>
+                    <dt>Key:</dt> <dd>{{source.key}}</dd>
+                    <dt>User:</dt> <dd>{{source.user}}</dd>
+                    <dt>Date:</dt> <dd>{{source.date|fromtimestamp}}</dd>
+                    <dt>Expires:</dt><dd> {{source.expire|fromtimestamp}}</dd>
+                    <dt>Source:</dt><dd> {{source.source}}</dd>
+                    <dt>Body:</dt><dd> <Pre>{{source.body}}</pre></dd>
+                 {% endwith %}
+                 </dl>
+             </div>
+	  {% endfor %}
+    </div>
+{% endif %}
+{% endblock %}

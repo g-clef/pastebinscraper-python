@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block navbar %}
+	{% with application="editself" %}
+		{{ block.super }}
+	{% endwith %}
+{% endblock %}
+
+{% block maincontent %}
+
+{% if form %}
+     <div class="control-group well col-md-offset-1 col-md-6">
+        <h4>Edit Your Contact Info</h4>
+	<form action="" method="POST" class="form form-search">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+               <div>{{form.non_field_errors}}</div>
+            {% endif %}
+            {% if edit_success%}
+               <div>Update successful</div>
+            {% endif %}
+	   <div class="control-group">
+              <div class="control">
+                 <dl>
+		   <dt>First Name: </dt><dd>{{form.first_name.errors}}{{form.first_name}}</dd>
+	           <dt>Last Name: </dt><dd>{{form.last_name.errors}}{{form.last_name}}</dd>
+	           <dt>Email: </dt><dd>{{form.email.errors}}{{form.email}}</dd>
+		</dl>
+              </div>
+           </div>
+           <div class="control-group">
+               <div class="controls">
+ 		  <button type="submit" class="brn" name="submit">Submit</button>
+               </div>
+           </div>
+	</form>
+      </div>
+{% endif %}
+
+
+
+{% endblock %}
+
