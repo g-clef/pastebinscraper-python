@@ -1,0 +1,25 @@
+<li class="navbar-brand">I Eat Paste</li>
+{% if application == "search" %}
+<li class="active"><a href="{% url 'paste:index' %}">Home</a></li>
+{% else %}
+<li><a href="{% url 'paste:index' %}">Home</a></li>
+{% endif %}
+<li class="divider-vertical"></li>
+{% if application == "savedSearches" %}
+<li class="active"><a href="{% url 'paste:listsearches' %}">Persistent Searches</a><?li>
+    {% else %}
+<li><a href="{% url 'paste:listsearches' %}">Persistent Searches</a><?li>
+    {% endif %}
+<li class="divider-vertical"></li>
+{% if user.id %}
+{% if application == "api" %}
+<li class="active"><a href="{% url 'paste:aboutapi' user.id %}">API Information</a></li>
+{% else %}
+<li><a href="{% url 'paste:aboutapi' user.id %}">API Information</a></li>
+{% endif %}
+{% if application == "editself" %}
+<li class="active"><a href="{% url 'paste:editmyself' user.id %}">Edit my profile</a></li>
+{% else %}
+<li><a href="{% url 'paste:editmyself' user.id %}">Edit my profile</a></li>
+{% endif %}
+{% endif %}

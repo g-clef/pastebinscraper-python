@@ -1,0 +1,7 @@
+django
+django-tastypie
+django-allauth
+libmagic
+requests
+elasticsearch
+urllib3
