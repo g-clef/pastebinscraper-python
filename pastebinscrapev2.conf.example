@@ -1,16 +1,9 @@
 [Pastebin]
 key=<insert pastebin key here>
 
-[Elasticsearch]
-index=paste
-doc_type=paste
-host=<insert elasticsearch host here>
-
 [Service]
 num_workers=5
 
 [Archive]
 path=/RAID/
 
-[Regexes]
-url=<insert url to get regexes from django here>

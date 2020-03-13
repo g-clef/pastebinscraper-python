@@ -1,0 +1,30 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: pastebin-scraper
+  labels:
+    app: pastebinscrape
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pastebinscrape
+  template:
+    metadata:
+      labels:
+        app: pastebinscrape
+    spec:
+      volumes:
+        - name: pastes
+          nfs:
+            server: 192.168.1.29
+            path: /mnt/DroboFS/Shares/paste
+      containers:
+        - name: pastebin-scraper
+          image: gclef/pastebin:1.1
+          imagePullPolicy: "IfNotPresent"
+          volumeMounts:
+            - name: pastes
+              mountPath: /RAID
+      imagePullSecrets:
+        - name: registrycreds
