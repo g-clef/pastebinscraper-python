@@ -170,7 +170,7 @@ class FileWriter(Process):
 def main():
     configfile = configparser.ConfigParser()
     configfile.read("pastebinscrapev2.conf")
-    api_key = configfile.get("Pastebin", "key")
+    api_key = configfile.get("Pastebin", "key", vars=os.environ)
     baseDir = configfile.get("Archive", "path")
     num_workers = int(configfile.get("Service", "num_workers"))
     taskqueue = Queue()

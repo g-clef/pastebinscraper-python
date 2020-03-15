@@ -37,7 +37,7 @@ saveTypes = ["application/x-dosexec",
 baseDir = "/RAID/"
 malwareDir = "/RAID/extracted_malware"
 
-apikey = "***REMOVED***"
+apikey = ""
 
 url = "https://www.virustotal.com/vtapi/v2/file/report"
 

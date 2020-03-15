@@ -21,10 +21,16 @@ spec:
             path: /mnt/DroboFS/Shares/paste
       containers:
         - name: pastebin-scraper
-          image: gclef/pastebin:1.1
+          image: gclef/pastebin:1.3
           imagePullPolicy: "IfNotPresent"
           volumeMounts:
             - name: pastes
               mountPath: /RAID
+          env:
+            - name: PASTEBIN_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: pastebin-secrets
+                  key: PASTEBIN_API_KEY
       imagePullSecrets:
         - name: registrycreds
