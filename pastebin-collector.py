@@ -18,11 +18,34 @@ import typing
 import zipfile
 
 import requests
+from PastebinDecoder import PastebinDecoder
 
 
-class Compressor:
-    def __init__(self, path):
+class Collector:
+    def __init__(self,
+                 path: str,
+                 malware_path: str,
+                 archive_prefix: str,
+                 archive_url: str,
+                 archive_token: str,
+                 archive_password: str):
         self.path = path
+        self.decoder = PastebinDecoder.PasteDecoder()
+        self.malware_path = malware_path,
+        self.archive_prefix = archive_prefix
+        self.archive_url = archive_url
+        self.archive_token = archive_token
+        self.archive_password = archive_password
+
+    def send_zip_to_archiver(self, zip_path: str):
+        headers = {"Authorization": f"Token {self.archive_token}"}
+        path_to_archiver = zip_path.replace(self.path, self.malware_path)
+        body = {"Path": path_to_archiver,
+                "password": self.archive_password,
+                "source": "pastebin"}
+        response = requests.post(self.archive_url, headers=headers, data=body)
+        if response.status_code not in (200, 201):
+            print(f"error submitting to archiver {response.content}")
 
     @staticmethod
     def zip_dir(dir_path: typing.AnyStr, file_name: typing.AnyStr) -> None:
@@ -42,6 +65,10 @@ class Compressor:
                 continue
             try:
                 outputFile.write(file_path, arcname=entry)
+            except FileNotFoundError:
+                # concerning: this means we have a file in the listing that isn't openable.
+                print("error opening file {}".format(file_path))
+                continue
             except Exception:
                 print("error writing entry: {}".format(entry))
                 continue
@@ -62,7 +89,7 @@ class Compressor:
                     print("error deleting entry: {}".format(entry))
         outputFile.close()
 
-    def compress(self):
+    def run(self):
         # recurse through all the directories, analyze all of them, except yesterday and today, since those
         # are likely to still be getting files.
         # identify yesterday's directory, analyze just that one.
@@ -86,7 +113,17 @@ class Compressor:
 
 if __name__ == "__main__":
     configfile = configparser.ConfigParser()
-    configfile.read("analyzer.conf")
+    configfile.read("collector.conf")
     pastebin_path = configfile.get("Pastebin", "path")
-    pastebin = Compressor(path=pastebin_path)
-    pastebin.compress()
+    malware_path = configfile.get("Analysis", "file_path")
+    archive_prefix = configfile.get("Analysis", "archive_prefix")
+    archive_url = configfile.get("Analysis", "url")
+    archive_token = configfile.get("Analysis", "token")
+    archive_password = configfile.get("Analysis", "archive_password")
+    collector = Collector(path=pastebin_path,
+                          malware_path=malware_path,
+                          archive_prefix=archive_prefix,
+                          archive_url = archive_url,
+                          archive_token=archive_token,
+                          archive_password=archive_password)
+    collector.run()
