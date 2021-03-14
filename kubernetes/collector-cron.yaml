@@ -30,5 +30,36 @@ spec:
                   mountPath: /malware
                 - name: pastebin-mount
                   mountPath: /paste
+              env:
+                - name: PASTEBIN_PATH
+                  valueFrom:
+                    secretKeyRef:
+                      name: pastebincollector-secrets
+                      key: PASTEBIN_PATH
+                - name: MALWARE_PATH
+                  valueFrom:
+                    secretKeyRef:
+                      name: pastebincollector-secrets
+                      key: MALWARE_PATH
+                - name: ARCHIVE_PATH
+                  valueFrom:
+                    secretKeyRef:
+                      name: pastebincollector-secrets
+                      key: ARCHIVE_PATH
+                - name: ARCHIVE_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: pastebincollector-secrets
+                      key: ARCHIVE_URL
+                - name: ARCHIVE_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: pastebincollector-secrets
+                      key: ARCHIVE_TOKEN
+                - name: ARCHIVE_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: pastebincollector-secrets
+                      key: ARCHIVE_PASSWORD
           imagePullSecrets:
             - name: registrycreds

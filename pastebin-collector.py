@@ -11,7 +11,6 @@
 #         check if file in archive: if so, remove
 #     if any changes made to malware zip file, submit path to analyzer.
 
-import configparser
 import datetime
 import os
 import typing
@@ -30,16 +29,16 @@ class Collector:
                  archive_token: str,
                  archive_password: str):
         self.path = path
-        self.decoder = PastebinDecoder.PasteDecoder()
-        self.malware_path = malware_path,
+        self.malware_path = malware_path
         self.archive_prefix = archive_prefix
         self.archive_url = archive_url
         self.archive_token = archive_token
         self.archive_password = archive_password
+        self.decoder = PastebinDecoder.PasteDecoder()
 
     def send_zip_to_archiver(self, zip_path: str):
         headers = {"Authorization": f"Token {self.archive_token}"}
-        path_to_archiver = zip_path.replace(self.path, self.malware_path)
+        path_to_archiver = zip_path.replace(self.path, self.archive_prefix)
         body = {"Path": path_to_archiver,
                 "password": self.archive_password,
                 "source": "pastebin"}
@@ -47,8 +46,7 @@ class Collector:
         if response.status_code not in (200, 201):
             print(f"error submitting to archiver {response.content}")
 
-    @staticmethod
-    def zip_dir(dir_path: typing.AnyStr, file_name: typing.AnyStr) -> None:
+    def zip_dir(self, dir_path: typing.AnyStr, file_name: typing.AnyStr) -> None:
         # make a zip file of the contents of the directory...remove the contents once you succeed
         # to make sure we don't delete a file until we're sure it's archived properly, put all
         # the files into the zip file, and close it. Then re-open it, get it's contents, and
@@ -57,22 +55,38 @@ class Collector:
         # first, make the zip file
         target = os.path.join(dir_path, file_name + ".zip")
         outputFile = zipfile.ZipFile(target, mode="a")
+        malware_dir_path = dir_path.replace(self.path, self.malware_path)
+        malware_archive_path = os.path.join(malware_dir_path, file_name + ".zip")
+        outputMalwareFile = zipfile.ZipFile(malware_archive_path, "a")
+        existing_files = outputFile.namelist()
+        existing_malware_files = outputMalwareFile.namelist()
+        changed_saved_file = False
         for entry in os.listdir(dir_path):
             file_path = os.path.join(dir_path, entry)
             if entry.endswith('.zip'):
+                # don't add the zipfile itself, or any other existing zip files.
                 continue
             if os.path.isdir(file_path):
                 continue
-            try:
-                outputFile.write(file_path, arcname=entry)
-            except FileNotFoundError:
-                # concerning: this means we have a file in the listing that isn't openable.
-                print("error opening file {}".format(file_path))
-                continue
-            except Exception:
-                print("error writing entry: {}".format(entry))
-                continue
+            if entry not in existing_files:
+                try:
+                    outputFile.write(file_path, arcname=entry)
+                except FileNotFoundError:
+                    # concerning: this means we have a file in the listing that isn't openable.
+                    print("error opening file {}".format(file_path))
+                except Exception:
+                    print("error writing entry: {}".format(entry))
+            if entry not in existing_malware_files:
+                try:
+                    outputMalwareFile.write(file_path, arcname=entry)
+                    changed_saved_file = True
+                except FileNotFoundError:
+                    # concerning: this means we have a file in the listing that isn't openable.
+                    print("error opening file {}".format(file_path))
+                except Exception:
+                    print("error writing entry: {}".format(entry))
         outputFile.close()
+        outputMalwareFile.close()
         # next, re-open it and read it's file listing
         saved_file = zipfile.ZipFile(target)
         successfully_saved_files = {entry.filename for entry in saved_file.filelist}
@@ -88,6 +102,8 @@ class Collector:
                 except Exception:
                     print("error deleting entry: {}".format(entry))
         outputFile.close()
+        if changed_saved_file:
+            self.send_zip_to_archiver(malware_archive_path)
 
     def run(self):
         # recurse through all the directories, analyze all of them, except yesterday and today, since those
@@ -112,18 +128,16 @@ class Collector:
 
 
 if __name__ == "__main__":
-    configfile = configparser.ConfigParser()
-    configfile.read("collector.conf")
-    pastebin_path = configfile.get("Pastebin", "path")
-    malware_path = configfile.get("Analysis", "file_path")
-    archive_prefix = configfile.get("Analysis", "archive_prefix")
-    archive_url = configfile.get("Analysis", "url")
-    archive_token = configfile.get("Analysis", "token")
-    archive_password = configfile.get("Analysis", "archive_password")
+    pastebin_path = os.environ.get("PASTEBIN_PATH", "/paste")
+    malware_path = os.environ.get("MALWARE_PATH", "/malware")
+    archive_prefix = os.environ.get("ARCHIVE_PATH", "/RAID")
+    archive_url = os.environ.get("ARCHIVE_URL", "http://malwareanalysissite:8000/api/job")
+    archive_token = os.environ.get("ARCHIVE_TOKEN")
+    archive_password = os.environ.get("ARCHIVE_PASSWORD")
     collector = Collector(path=pastebin_path,
                           malware_path=malware_path,
                           archive_prefix=archive_prefix,
-                          archive_url = archive_url,
+                          archive_url=archive_url,
                           archive_token=archive_token,
                           archive_password=archive_password)
     collector.run()
