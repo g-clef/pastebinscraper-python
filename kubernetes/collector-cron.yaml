@@ -1,0 +1,34 @@
+kind: CronJob
+apiVersion: batch/v1beta1
+metadata:
+  name: malware-compressor-job
+spec:
+  schedule: "@daily"
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: malware-compressor-job
+        spec:
+          restartPolicy: OnFailure
+          volumes:
+            - name: malware-mount
+              nfs:
+                server: 192.168.1.29
+                path: /mnt/DroboFS/Shares/malware
+            - name: pastebin-mount
+              nfs:
+                server: 192.168.1.29
+                path: /mnt/DroboFS/Shares/paste
+          containers:
+            - name: malware-compressor
+              image: gclef/malware:compressor-1.0
+              imagePullPolicy: "Always"
+              volumeMounts:
+                - name: malware-mount
+                  mountPath: /malware
+                - name: pastebin-mount
+                  mountPath: /paste
+          imagePullSecrets:
+            - name: registrycreds
