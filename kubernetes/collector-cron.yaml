@@ -1,7 +1,7 @@
 kind: CronJob
 apiVersion: batch/v1beta1
 metadata:
-  name: malware-collector-job
+  name: pastebin-collector-job
 spec:
   schedule: "@daily"
   jobTemplate:
@@ -9,7 +9,7 @@ spec:
       template:
         metadata:
           labels:
-            app: malware-collector-job
+            app: pastebin-collector-job
         spec:
           restartPolicy: OnFailure
           volumes:
@@ -22,8 +22,8 @@ spec:
                 server: 192.168.1.29
                 path: /mnt/DroboFS/Shares/paste
           containers:
-            - name: malware-collector
-              image: gclef/malware:collector-1.0
+            - name: pastebin-collector
+              image: gclef/malware:pastebin-collector-1.0
               imagePullPolicy: "Always"
               volumeMounts:
                 - name: malware-mount
