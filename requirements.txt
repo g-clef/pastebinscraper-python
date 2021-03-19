@@ -1,3 +1,4 @@
 libmagic
 requests
 urllib3
+PastebinDecoder >=1.0.1
