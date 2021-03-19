@@ -16,7 +16,7 @@ spec:
             - name: malware-mount
               nfs:
                 server: 192.168.1.29
-                path: /mnt/DroboFS/Shares/malware
+                path: /mnt/DroboFS/Shares/malware/pastebin-extractions
             - name: pastebin-mount
               nfs:
                 server: 192.168.1.29

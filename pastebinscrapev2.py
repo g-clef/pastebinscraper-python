@@ -143,16 +143,12 @@ class FileWriter(Process):
                     timestamp = datetime.datetime.fromtimestamp(data['date'])
                 except Exception:
                     timestamp = datetime.datetime.now()
-                yeardirname = os.path.join(self.baseDir, str(timestamp.year))
-                monthdirname = os.path.join(yeardirname, str(timestamp.month))
-                daydirname = os.path.join(monthdirname, str(timestamp.day))
+                daydirname = os.path.join(self.baseDir,
+                                          str(timestamp.year),
+                                          str(timestamp.month),
+                                          str(timestamp.day))
                 if not os.path.isdir(daydirname):
-                    if not os.path.isdir(yeardirname):
-                        os.mkdir(yeardirname)
-                    if not os.path.isdir(monthdirname):
-                        os.mkdir(monthdirname)
-                    if not os.path.isdir(daydirname):
-                        os.mkdir(daydirname)
+                    os.makedirs(daydirname)
                 if not data['key']:
                     print("Error with paste: has no key: %s" % str(data))
                     continue

@@ -12,6 +12,7 @@
 #     if any changes made to malware zip file, submit path to analyzer.
 
 import datetime
+import json
 import os
 import typing
 import zipfile
@@ -27,7 +28,8 @@ class Collector:
                  archive_prefix: str,
                  archive_url: str,
                  archive_token: str,
-                 archive_password: str):
+                 archive_password: str,
+                 malware_file_types: typing.Optional[typing.List] = None):
         self.path = path
         self.malware_path = malware_path
         self.archive_prefix = archive_prefix
@@ -35,6 +37,8 @@ class Collector:
         self.archive_token = archive_token
         self.archive_password = archive_password
         self.decoder = PastebinDecoder.PasteDecoder()
+        if malware_file_types is None:
+            self.malware_file_types = ["application", "image"]
 
     def send_zip_to_archiver(self, zip_path: str):
         headers = {"Authorization": f"Token {self.archive_token}"}
@@ -46,6 +50,19 @@ class Collector:
         if response.status_code not in (200, 201):
             print(f"error submitting to archiver {response.content}")
 
+    def find_malware_path(self, original_path: str):
+        # assumes a path naming pattern like "/paste/2021/3/21/", meaning March 21, 2021
+        #
+        removed_base = original_path.replace(self.path, "")
+        if removed_base.startswith(os.path.sep):
+            removed_base = removed_base.replace(os.path.sep, "", 1)
+        yeardirname, monthdirname, daydirname, filename = removed_base.split(os.path.sep)
+        contained_dir = os.path.join(self.malware_path, yeardirname, monthdirname, daydirname)
+        if not os.path.isdir(contained_dir):
+            os.makedirs(contained_dir)
+        new_path = os.path.join(contained_dir, filename)
+        return new_path
+
     def zip_dir(self, dir_path: typing.AnyStr, file_name: typing.AnyStr) -> None:
         # make a zip file of the contents of the directory...remove the contents once you succeed
         # to make sure we don't delete a file until we're sure it's archived properly, put all
@@ -55,8 +72,7 @@ class Collector:
         # first, make the zip file
         target = os.path.join(dir_path, file_name + ".zip")
         outputFile = zipfile.ZipFile(target, mode="a")
-        malware_dir_path = dir_path.replace(self.path, self.malware_path)
-        malware_archive_path = os.path.join(malware_dir_path, file_name + ".zip")
+        malware_archive_path = self.find_malware_path(target)
         outputMalwareFile = zipfile.ZipFile(malware_archive_path, "a")
         existing_files = outputFile.namelist()
         existing_malware_files = outputMalwareFile.namelist()
@@ -68,6 +84,8 @@ class Collector:
                 continue
             if os.path.isdir(file_path):
                 continue
+            if entry.startswith("."):
+                continue
             if entry not in existing_files:
                 try:
                     outputFile.write(file_path, arcname=entry)
@@ -77,14 +95,23 @@ class Collector:
                 except Exception:
                     print("error writing entry: {}".format(entry))
             if entry not in existing_malware_files:
-                try:
-                    outputMalwareFile.write(file_path, arcname=entry)
-                    changed_saved_file = True
-                except FileNotFoundError:
-                    # concerning: this means we have a file in the listing that isn't openable.
-                    print("error opening file {}".format(file_path))
-                except Exception:
-                    print("error writing entry: {}".format(entry))
+                filehandle = open(file_path, "r")
+                data = filehandle.read()
+                decoded = json.loads(data)
+                file_type, _, _ = self.decoder.handle(decoded['body'].encode("utf-8"))
+                keep_file = False
+                for prefix in self.malware_file_types:
+                    if file_type.startswith(prefix):
+                        keep_file = True
+                if keep_file:
+                    try:
+                        outputMalwareFile.write(file_path, arcname=entry)
+                        changed_saved_file = True
+                    except FileNotFoundError:
+                        # concerning: this means we have a file in the listing that isn't openable.
+                        print("error opening file {}".format(file_path))
+                    except Exception:
+                        print("error writing entry: {}".format(entry))
         outputFile.close()
         outputMalwareFile.close()
         # next, re-open it and read it's file listing
