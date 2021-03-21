@@ -15,7 +15,7 @@ import datetime
 import json
 import os
 import typing
-import zipfile
+from zipfile import ZipFile
 
 import requests
 from PastebinDecoder import PastebinDecoder
@@ -68,7 +68,7 @@ class Collector:
 
     @staticmethod
     def archive_files_into_zip(target, dir_path):
-        with zipfile.ZipFile(target, mode="a") as outputFile:
+        with ZipFile(target, mode="a") as outputFile:
             existing_files = outputFile.namelist()
             for entry in os.listdir(dir_path):
                 file_path = os.path.join(dir_path, entry)
@@ -90,7 +90,7 @@ class Collector:
 
     @staticmethod
     def remove_archived_files(target, dir_path):
-        with zipfile.ZipFile(target, "r") as saved_file:
+        with ZipFile(target, "r") as saved_file:
             successfully_saved_files = {entry.filename for entry in saved_file.filelist}
             for entry in os.listdir(dir_path):
                 file_path = os.path.join(dir_path, entry)
@@ -107,27 +107,26 @@ class Collector:
     def extract_interesting_files(self, target, dir_path, malware_archive_path):
         # re-open one last time to sync with extracted malware zip.
         changed_saved_file = False
-        outputMalwareFile = zipfile.ZipFile(malware_archive_path, "a")
-        with zipfile.ZipFile(target, "r") as archive:
+        with ZipFile(target, "r") as archive, \
+             ZipFile(malware_archive_path, "a") as outputMalwareFile:
             existing_malware_files = outputMalwareFile.namelist()
             for entry in archive.namelist():
-                file_path = os.path.join(dir_path, entry)
                 if entry not in existing_malware_files:
-                    filehandle = open(file_path, "r")
+                    filehandle = archive.open(entry, "r")
                     data = filehandle.read()
                     decoded = json.loads(data)
-                    file_type, _, _ = self.decoder.handle(decoded['body'].encode("utf-8"))
+                    file_type, file_data, _ = self.decoder.handle(decoded['body'].encode("utf-8"))
                     keep_file = False
                     for prefix in self.malware_file_types:
                         if file_type.startswith(prefix):
                             keep_file = True
                     if keep_file:
                         try:
-                            outputMalwareFile.write(file_path, arcname=entry)
+                            outputMalwareFile.writestr(data=file_data[0], zinfo_or_arcname=entry)
                             changed_saved_file = True
                         except FileNotFoundError:
                             # concerning: this means we have a file in the listing that isn't openable.
-                            print("error opening file {}".format(file_path))
+                            print("error opening file {}".format(entry))
                         except Exception:
                             print("error writing entry: {}".format(entry))
         return changed_saved_file
@@ -145,9 +144,11 @@ class Collector:
         # the zip
         self.remove_archived_files(target, dir_path)
         try:
+            print(f"processing {dir_path}")
             malware_archive_path = self.find_malware_path(target)
             changed_archive = self.extract_interesting_files(target, dir_path, malware_archive_path)
             if changed_archive:
+                print("sending updated malware zip to archiver")
                 self.send_zip_to_archiver(malware_archive_path)
         except Exception:
             print(f"error processing {dir_path}, {file_name}, skipping malware archive")
