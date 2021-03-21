@@ -15,7 +15,7 @@ import datetime
 import json
 import os
 import typing
-import zipfile
+from zipfile import ZipFile
 
 import requests
 from PastebinDecoder import PastebinDecoder
@@ -56,12 +56,80 @@ class Collector:
         removed_base = original_path.replace(self.path, "")
         if removed_base.startswith(os.path.sep):
             removed_base = removed_base.replace(os.path.sep, "", 1)
-        yeardirname, monthdirname, daydirname, filename = removed_base.split(os.path.sep)
+        path_parts = removed_base.split(os.path.sep)
+        if len(path_parts) != 4:
+            raise Exception(f"error with path: {removed_base} ")
+        yeardirname, monthdirname, daydirname, filename = path_parts
         contained_dir = os.path.join(self.malware_path, yeardirname, monthdirname, daydirname)
         if not os.path.isdir(contained_dir):
             os.makedirs(contained_dir)
         new_path = os.path.join(contained_dir, filename)
         return new_path
+
+    @staticmethod
+    def archive_files_into_zip(target, dir_path):
+        with ZipFile(target, mode="a") as outputFile:
+            existing_files = outputFile.namelist()
+            for entry in os.listdir(dir_path):
+                file_path = os.path.join(dir_path, entry)
+                if entry.endswith('.zip'):
+                    # don't add the zipfile itself, or any other existing zip files.
+                    continue
+                if os.path.isdir(file_path):
+                    continue
+                if entry.startswith("."):
+                    continue
+                if entry not in existing_files:
+                    try:
+                        outputFile.write(file_path, arcname=entry)
+                    except FileNotFoundError:
+                        # concerning: this means we have a file in the listing that isn't openable.
+                        print("error opening file {}".format(file_path))
+                    except Exception:
+                        print("error writing entry: {}".format(entry))
+
+    @staticmethod
+    def remove_archived_files(target, dir_path):
+        with ZipFile(target, "r") as saved_file:
+            successfully_saved_files = {entry.filename for entry in saved_file.filelist}
+            for entry in os.listdir(dir_path):
+                file_path = os.path.join(dir_path, entry)
+                if entry.endswith('.zip'):
+                    continue
+                if os.path.isdir(file_path):
+                    continue
+                if entry in successfully_saved_files:
+                    try:
+                        os.remove(file_path)
+                    except Exception:
+                        print("error deleting entry: {}".format(entry))
+
+    def extract_interesting_files(self, target, dir_path, malware_archive_path):
+        # re-open one last time to sync with extracted malware zip.
+        changed_saved_file = False
+        with ZipFile(target, "r") as archive, \
+             ZipFile(malware_archive_path, "a") as outputMalwareFile:
+            existing_malware_files = outputMalwareFile.namelist()
+            for entry in archive.namelist():
+                if entry not in existing_malware_files:
+                    filehandle = archive.open(entry, "r")
+                    data = filehandle.read()
+                    decoded = json.loads(data)
+                    file_type, file_data, _ = self.decoder.handle(decoded['body'].encode("utf-8"))
+                    keep_file = False
+                    for prefix in self.malware_file_types:
+                        if file_type.startswith(prefix):
+                            keep_file = True
+                    if keep_file:
+                        try:
+                            outputMalwareFile.writestr(data=file_data[0], zinfo_or_arcname=entry)
+                            changed_saved_file = True
+                        except FileNotFoundError:
+                            # concerning: this means we have a file in the listing that isn't openable.
+                            print("error opening file {}".format(entry))
+                        except Exception:
+                            print("error writing entry: {}".format(entry))
+        return changed_saved_file
 
     def zip_dir(self, dir_path: typing.AnyStr, file_name: typing.AnyStr) -> None:
         # make a zip file of the contents of the directory...remove the contents once you succeed
@@ -71,70 +139,24 @@ class Collector:
         # that exist in the zip file (and make sure you don't delete the zip file while you're at it).
         # first, make the zip file
         target = os.path.join(dir_path, file_name + ".zip")
-        outputFile = zipfile.ZipFile(target, mode="a")
-        malware_archive_path = self.find_malware_path(target)
-        outputMalwareFile = zipfile.ZipFile(malware_archive_path, "a")
-        existing_files = outputFile.namelist()
-        existing_malware_files = outputMalwareFile.namelist()
-        changed_saved_file = False
-        for entry in os.listdir(dir_path):
-            file_path = os.path.join(dir_path, entry)
-            if entry.endswith('.zip'):
-                # don't add the zipfile itself, or any other existing zip files.
-                continue
-            if os.path.isdir(file_path):
-                continue
-            if entry.startswith("."):
-                continue
-            if entry not in existing_files:
-                try:
-                    outputFile.write(file_path, arcname=entry)
-                except FileNotFoundError:
-                    # concerning: this means we have a file in the listing that isn't openable.
-                    print("error opening file {}".format(file_path))
-                except Exception:
-                    print("error writing entry: {}".format(entry))
-            if entry not in existing_malware_files:
-                filehandle = open(file_path, "r")
-                data = filehandle.read()
-                decoded = json.loads(data)
-                file_type, _, _ = self.decoder.handle(decoded['body'].encode("utf-8"))
-                keep_file = False
-                for prefix in self.malware_file_types:
-                    if file_type.startswith(prefix):
-                        keep_file = True
-                if keep_file:
-                    try:
-                        outputMalwareFile.write(file_path, arcname=entry)
-                        changed_saved_file = True
-                    except FileNotFoundError:
-                        # concerning: this means we have a file in the listing that isn't openable.
-                        print("error opening file {}".format(file_path))
-                    except Exception:
-                        print("error writing entry: {}".format(entry))
-        outputFile.close()
-        outputMalwareFile.close()
-        # next, re-open it and read it's file listing
-        saved_file = zipfile.ZipFile(target)
-        successfully_saved_files = {entry.filename for entry in saved_file.filelist}
-        for entry in os.listdir(dir_path):
-            file_path = os.path.join(dir_path, entry)
-            if entry.endswith('.zip'):
-                continue
-            if os.path.isdir(file_path):
-                continue
-            if entry in successfully_saved_files:
-                try:
-                    os.remove(file_path)
-                except Exception:
-                    print("error deleting entry: {}".format(entry))
-        outputFile.close()
-        if changed_saved_file:
-            self.send_zip_to_archiver(malware_archive_path)
+        self.archive_files_into_zip(target, dir_path)
+        # next, re-open it and read it's file listing, remove all files successfully archived to
+        # the zip
+        self.remove_archived_files(target, dir_path)
+        try:
+            print(f"processing {dir_path}")
+            malware_archive_path = self.find_malware_path(target)
+            changed_archive = self.extract_interesting_files(target, dir_path, malware_archive_path)
+            if changed_archive:
+                print("sending updated malware zip to archiver")
+                self.send_zip_to_archiver(malware_archive_path)
+        except Exception:
+            print(f"error processing {dir_path}, {file_name}, skipping malware archive")
+            return
 
     def run(self):
-        # recurse through all the directories, analyze all of them, except yesterday and today, since those
-        # are likely to still be getting files.
+        # recurse through all the directories, analyze all of them, except yesterday and today,
+        # since those are likely to still be getting files.
         # identify yesterday's directory, analyze just that one.
         today = datetime.datetime.now(datetime.timezone.utc)
         yesterday = today - datetime.timedelta(days=1)

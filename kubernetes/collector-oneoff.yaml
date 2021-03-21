@@ -1,0 +1,59 @@
+kind: Job
+apiVersion: batch/v1
+metadata:
+  name: pastebin-collector-oneoff
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      volumes:
+        - name: malware-mount
+          nfs:
+            server: 192.168.1.29
+            path: /mnt/DroboFS/Shares/malware/pastebin-extractions
+        - name: pastebin-mount
+          nfs:
+            server: 192.168.1.29
+            path: /mnt/DroboFS/Shares/paste
+      containers:
+        - name: pastebin-collector
+          image: gclef/pastebin:pastebin-collector-1.3
+          imagePullPolicy: "Always"
+          volumeMounts:
+            - name: malware-mount
+              mountPath: /malware
+            - name: pastebin-mount
+              mountPath: /paste
+          env:
+            - name: PASTEBIN_PATH
+              valueFrom:
+                secretKeyRef:
+                  name: pastebincollector-secrets
+                  key: PASTEBIN_PATH
+            - name: MALWARE_PATH
+              valueFrom:
+                secretKeyRef:
+                  name: pastebincollector-secrets
+                  key: MALWARE_PATH
+            - name: ARCHIVE_PATH
+              valueFrom:
+                secretKeyRef:
+                  name: pastebincollector-secrets
+                  key: ARCHIVE_PATH
+            - name: ARCHIVE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: pastebincollector-secrets
+                  key: ARCHIVE_URL
+            - name: ARCHIVE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: pastebincollector-secrets
+                  key: ARCHIVE_TOKEN
+            - name: ARCHIVE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pastebincollector-secrets
+                  key: ARCHIVE_PASSWORD
+      imagePullSecrets:
+        - name: registrycreds
