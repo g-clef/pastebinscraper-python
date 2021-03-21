@@ -56,7 +56,10 @@ class Collector:
         removed_base = original_path.replace(self.path, "")
         if removed_base.startswith(os.path.sep):
             removed_base = removed_base.replace(os.path.sep, "", 1)
-        yeardirname, monthdirname, daydirname, filename = removed_base.split(os.path.sep)
+        path_parts = removed_base.split(os.path.sep)
+        if len(path_parts) != 4:
+            raise Exception(f"error with path: {removed_base} ")
+        yeardirname, monthdirname, daydirname, filename = path_parts
         contained_dir = os.path.join(self.malware_path, yeardirname, monthdirname, daydirname)
         if not os.path.isdir(contained_dir):
             os.makedirs(contained_dir)
@@ -72,7 +75,11 @@ class Collector:
         # first, make the zip file
         target = os.path.join(dir_path, file_name + ".zip")
         outputFile = zipfile.ZipFile(target, mode="a")
-        malware_archive_path = self.find_malware_path(target)
+        try:
+            malware_archive_path = self.find_malware_path(target)
+        except Exception:
+            print(f"error processing {dir_path}, {file_name}, skipping")
+            return
         outputMalwareFile = zipfile.ZipFile(malware_archive_path, "a")
         existing_files = outputFile.namelist()
         existing_malware_files = outputMalwareFile.namelist()
