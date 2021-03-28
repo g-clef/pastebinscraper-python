@@ -29,7 +29,8 @@ class Collector:
                  archive_url: str,
                  archive_token: str,
                  archive_password: str,
-                 malware_file_types: typing.Optional[typing.List] = None):
+                 malware_file_types: typing.Optional[typing.List] = None,
+                 skip_file_types: typing.Optional[typing.List] = None):
         self.path = path
         self.malware_path = malware_path
         self.archive_prefix = archive_prefix
@@ -39,6 +40,14 @@ class Collector:
         self.decoder = PastebinDecoder.PasteDecoder()
         if malware_file_types is None:
             self.malware_file_types = ["application", "image"]
+        else:
+            self.malware_file_types = malware_file_types
+        if skip_file_types is None:
+            self.skip_file_types = ["application/json",
+                                    "application/octet-stream",
+                                    "application/x-wine-extension-ini"]
+        else:
+            self.skip_file_types = skip_file_types
 
     def send_zip_to_archiver(self, zip_path: str):
         headers = {"Authorization": f"Token {self.archive_token}"}
