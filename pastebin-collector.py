@@ -127,7 +127,7 @@ class Collector:
                     file_type, file_data, _ = self.decoder.handle(decoded['body'].encode("utf-8"))
                     keep_file = False
                     for prefix in self.malware_file_types:
-                        if file_type.startswith(prefix):
+                        if file_type.startswith(prefix) and file_type not in self.skip_file_types:
                             keep_file = True
                     if keep_file:
                         try:
