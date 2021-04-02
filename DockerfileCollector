@@ -9,11 +9,7 @@ RUN python3 -m venv venv
 RUN . /app/venv/bin/activate && pip3 install -r requirements.txt
 
 ADD pastebin-collector.py /app
-# add a non-root user
-RUN groupadd -r pastebin && useradd --no-log-init -r -g pastebin pastebin
-RUN chown -R pastebin:pastebin /app
 
-USER pastebin
 WORKDIR /app
 # activate the virtual environment
 ENV VIRTUAL_ENV /app/venv
