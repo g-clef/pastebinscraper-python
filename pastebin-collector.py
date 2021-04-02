@@ -55,7 +55,7 @@ class Collector:
         body = {"Path": path_to_archiver,
                 "password": self.archive_password,
                 "source": "pastebin"}
-        response = requests.post(self.archive_url, headers=headers, data=body)
+        response = requests.post(self.archive_url, headers=headers, json=body)
         if response.status_code not in (200, 201):
             print(f"error submitting to archiver {response.content}")
 
