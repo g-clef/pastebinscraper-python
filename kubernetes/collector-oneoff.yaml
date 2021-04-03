@@ -25,36 +25,35 @@ spec:
             - name: pastebin-mount
               mountPath: /paste
           env:
-              env:
-                - name: PASTEBIN_PATH
-                  valueFrom:
-                    secretKeyRef:
-                      name: pastebincollector-secrets
-                      key: PASTEBIN_PATH
-                - name: MALWARE_PATH
-                  valueFrom:
-                    secretKeyRef:
-                      name: pastebincollector-secrets
-                      key: MALWARE_PATH
-                - name: ANALYZER_PATH
-                  valueFrom:
-                    secretKeyRef:
-                      name: pastebincollector-secrets
-                      key: ANALYZER_PATH
-                - name: ANALYZER_URL
-                  valueFrom:
-                    secretKeyRef:
-                      name: pastebincollector-secrets
-                      key: ANALYZER_URL
-                - name: ANALYZER_TOKEN
-                  valueFrom:
-                    secretKeyRef:
-                      name: pastebincollector-secrets
-                      key: ARCHIVE_TOKEN
-                - name: ARCHIVE_PASSWORD
-                  valueFrom:
-                    secretKeyRef:
-                      name: pastebincollector-secrets
-                      key: ARCHIVE_PASSWORD
+            - name: PASTEBIN_PATH
+              valueFrom:
+                secretKeyRef:
+                  name: pastebincollector-secrets
+                  key: PASTEBIN_PATH
+            - name: MALWARE_PATH
+              valueFrom:
+                secretKeyRef:
+                  name: pastebincollector-secrets
+                  key: MALWARE_PATH
+            - name: ANALYZER_PATH
+              valueFrom:
+                secretKeyRef:
+                  name: pastebincollector-secrets
+                  key: ANALYZER_PATH
+            - name: ANALYZER_URL
+              valueFrom:
+                secretKeyRef:
+                  name: pastebincollector-secrets
+                  key: ANALYZER_URL
+            - name: ANALYZER_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: pastebincollector-secrets
+                  key: ARCHIVE_TOKEN
+            - name: ARCHIVE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pastebincollector-secrets
+                  key: ARCHIVE_PASSWORD
       imagePullSecrets:
         - name: registrycreds
