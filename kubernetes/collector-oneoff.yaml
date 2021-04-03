@@ -49,7 +49,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: pastebincollector-secrets
-                  key: ARCHIVE_TOKEN
+                  key: ANALYZER_TOKEN
             - name: ARCHIVE_PASSWORD
               valueFrom:
                 secretKeyRef:
