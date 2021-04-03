@@ -23,7 +23,7 @@ spec:
                 path: /mnt/DroboFS/Shares/paste
           containers:
             - name: pastebin-collector
-              image: gclef/pastebin:pastebin-collector-1.11
+              image: gclef/pastebin:pastebin-collector-1.12
               imagePullPolicy: "Always"
               volumeMounts:
                 - name: malware-mount
@@ -41,17 +41,17 @@ spec:
                     secretKeyRef:
                       name: pastebincollector-secrets
                       key: MALWARE_PATH
-                - name: ARCHIVE_PATH
+                - name: ANALYZER_PATH
                   valueFrom:
                     secretKeyRef:
                       name: pastebincollector-secrets
-                      key: ARCHIVE_PATH
-                - name: ARCHIVE_URL
+                      key: ANALYZER_PATH
+                - name: ANALYZER_URL
                   valueFrom:
                     secretKeyRef:
                       name: pastebincollector-secrets
-                      key: ARCHIVE_URL
-                - name: ARCHIVE_TOKEN
+                      key: ANALYZER_URL
+                - name: ANALYZER_TOKEN
                   valueFrom:
                     secretKeyRef:
                       name: pastebincollector-secrets
