@@ -13,5 +13,5 @@ ADD pastebin-collector.py /app
 WORKDIR /app
 # activate the virtual environment
 ENV VIRTUAL_ENV /app/venv
-ENV PATH /venv/bin:$PATH
+ENV PATH /app/venv/bin:$PATH
 CMD ["/app/venv/bin/python3", "/app/pastebin-collector.py"]

@@ -52,7 +52,7 @@ class Collector:
     def send_zip_to_archiver(self, zip_path: str):
         headers = {"Authorization": f"Token {self.archive_token}"}
         path_to_archiver = zip_path.replace(self.path, self.archive_prefix)
-        body = {"Path": path_to_archiver,
+        body = {"path": path_to_archiver,
                 "password": self.archive_password,
                 "source": "pastebin"}
         response = requests.post(self.archive_url, headers=headers, json=body)
