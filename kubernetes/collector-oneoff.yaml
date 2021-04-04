@@ -19,6 +19,11 @@ spec:
         - name: pastebin-collector
           image: gclef/pastebin:pastebin-collector-1.14
           imagePullPolicy: "Always"
+          resources:
+            limits:
+              memory: "1Gi"
+            requests:
+              memory: "512Mi"
           volumeMounts:
             - name: malware-mount
               mountPath: /malware
