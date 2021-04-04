@@ -23,7 +23,7 @@ spec:
                 path: /mnt/DroboFS/Shares/paste
           containers:
             - name: pastebin-collector
-              image: gclef/pastebin:pastebin-collector-1.13
+              image: gclef/pastebin:pastebin-collector-1.14
               imagePullPolicy: "Always"
               volumeMounts:
                 - name: malware-mount
