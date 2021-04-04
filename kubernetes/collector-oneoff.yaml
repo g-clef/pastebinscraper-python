@@ -17,7 +17,7 @@ spec:
             path: /mnt/DroboFS/Shares/paste
       containers:
         - name: pastebin-collector
-          image: gclef/pastebin:pastebin-collector-1.16
+          image: gclef/pastebin:pastebin-collector-1.17
           imagePullPolicy: "Always"
           resources:
             limits:
