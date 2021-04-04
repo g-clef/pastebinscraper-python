@@ -13,12 +13,15 @@
 
 import datetime
 import json
+import logging
 import os
 import typing
 from zipfile import ZipFile
 
 import requests
 from PastebinDecoder import PastebinDecoder
+
+logger = logging.getLogger(__name__)
 
 
 class Collector:
@@ -57,7 +60,7 @@ class Collector:
                 "source": "pastebin"}
         response = requests.post(self.archive_url, headers=headers, json=body)
         if response.status_code not in (200, 201):
-            print(f"error submitting to archiver {response.content}")
+            logger.error(f"error submitting to archiver {response.content}")
 
     def find_malware_path(self, original_path: str):
         # assumes a path naming pattern like "/paste/2021/3/21/", meaning March 21, 2021
@@ -93,9 +96,9 @@ class Collector:
                         outputFile.write(file_path, arcname=entry)
                     except FileNotFoundError:
                         # concerning: this means we have a file in the listing that isn't openable.
-                        print("error opening file {}".format(file_path))
+                        logger.error("error opening file {}".format(file_path))
                     except Exception:
-                        print("error writing entry: {}".format(entry))
+                        logger.exception("error writing entry: {}".format(entry))
 
     @staticmethod
     def remove_archived_files(target, dir_path):
@@ -111,7 +114,7 @@ class Collector:
                     try:
                         os.remove(file_path)
                     except Exception:
-                        print("error deleting entry: {}".format(entry))
+                        logger.exception("error deleting entry: {}".format(entry))
 
     def extract_interesting_files(self, target, dir_path, malware_archive_path):
         # re-open one last time to sync with extracted malware zip.
@@ -135,9 +138,9 @@ class Collector:
                             changed_saved_file = True
                         except FileNotFoundError:
                             # concerning: this means we have a file in the listing that isn't openable.
-                            print("error opening file {}".format(entry))
+                            logger.error("error opening file {}".format(entry))
                         except Exception:
-                            print("error writing entry: {}".format(entry))
+                            logger.exception("error writing entry: {}".format(entry))
         return changed_saved_file
 
     def zip_dir(self, dir_path: typing.AnyStr, file_name: typing.AnyStr) -> None:
@@ -153,14 +156,14 @@ class Collector:
         # the zip
         self.remove_archived_files(target, dir_path)
         try:
-            print(f"processing {dir_path}")
+            logger.info(f"processing {dir_path}")
             malware_archive_path = self.find_malware_path(target)
             changed_archive = self.extract_interesting_files(target, dir_path, malware_archive_path)
             if changed_archive:
-                print("sending updated malware zip to archiver")
+                logger.info("sending updated malware zip to archiver")
                 self.send_zip_to_archiver(malware_archive_path)
         except Exception:
-            print(f"error processing {dir_path}, {file_name}, skipping malware archive")
+            logger.exception(f"error processing {dir_path}, {file_name}, skipping malware archive")
             return
 
     def run(self):
