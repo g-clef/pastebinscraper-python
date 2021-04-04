@@ -58,7 +58,9 @@ class Collector:
         body = {"path": path_to_archiver,
                 "password": self.archive_password,
                 "source": "pastebin"}
+        logger.info(f"sending zipfile to analyzer {body}")
         response = requests.post(self.archive_url, headers=headers, json=body)
+        logger.info(f"response from analyzer {response.content}")
         if response.status_code not in (200, 201):
             logger.error(f"error submitting to archiver {response.content}")
 
