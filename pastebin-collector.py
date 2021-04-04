@@ -51,7 +51,7 @@ class Collector:
 
     def send_zip_to_archiver(self, zip_path: str):
         headers = {"Authorization": f"Token {self.archive_token}"}
-        path_to_archiver = zip_path.replace(self.path, self.archive_prefix)
+        path_to_archiver = zip_path.replace(self.malware_path, self.archive_prefix)
         body = {"path": path_to_archiver,
                 "password": self.archive_password,
                 "source": "pastebin"}
@@ -188,9 +188,9 @@ class Collector:
 if __name__ == "__main__":
     pastebin_path = os.environ.get("PASTEBIN_PATH", "/paste")
     malware_path = os.environ.get("MALWARE_PATH", "/malware")
-    archive_prefix = os.environ.get("ARCHIVE_PATH", "/RAID")
-    archive_url = os.environ.get("ARCHIVE_URL", "http://malware-analysis-site:8000/api/job")
-    archive_token = os.environ.get("ARCHIVE_TOKEN")
+    archive_prefix = os.environ.get("ANALYZER_PATH", "/RAID/pastebin-extractions")
+    archive_url = os.environ.get("ANALYZER_URL", "http://malware-analysis-site:8000/api/job")
+    archive_token = os.environ.get("ANALYZER_TOKEN")
     archive_password = os.environ.get("ARCHIVE_PASSWORD")
     collector = Collector(path=pastebin_path,
                           malware_path=malware_path,
