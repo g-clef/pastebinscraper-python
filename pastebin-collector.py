@@ -51,7 +51,7 @@ class Collector:
 
     def send_zip_to_archiver(self, zip_path: str):
         headers = {"Authorization": f"Token {self.archive_token}"}
-        path_to_archiver = zip_path.replace(self.path, self.archive_prefix)
+        path_to_archiver = zip_path.replace(self.malware_path, self.archive_prefix)
         body = {"path": path_to_archiver,
                 "password": self.archive_password,
                 "source": "pastebin"}
