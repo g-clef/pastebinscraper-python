@@ -157,7 +157,7 @@ class FileWriter(Process):
                     fileHandle.write(json.dumps(data))
                 except Exception:
                     try:
-                        fileHandle.write(base64.b64encode(str(data)))
+                        fileHandle.write(base64.b64encode(str(data)).decode("utf-8"))
                     except Exception:
                         print("Error writing file to disk")
                 fileHandle.close()

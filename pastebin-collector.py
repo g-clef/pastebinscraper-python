@@ -22,6 +22,7 @@ import requests
 from PastebinDecoder import PastebinDecoder
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 class Collector:
@@ -118,7 +119,7 @@ class Collector:
                     except Exception:
                         logger.exception("error deleting entry: {}".format(entry))
 
-    def extract_interesting_files(self, target, dir_path, malware_archive_path):
+    def extract_interesting_files(self, target, malware_archive_path):
         # re-open one last time to sync with extracted malware zip.
         changed_saved_file = False
         with ZipFile(target, "r") as archive, \
@@ -135,6 +136,7 @@ class Collector:
                         if file_type.startswith(prefix) and file_type not in self.skip_file_types:
                             keep_file = True
                     if keep_file:
+                        logger.info(f"keeping file {entry}")
                         try:
                             outputMalwareFile.writestr(data=file_data[0], zinfo_or_arcname=entry)
                             changed_saved_file = True
@@ -153,14 +155,18 @@ class Collector:
         # that exist in the zip file (and make sure you don't delete the zip file while you're at it).
         # first, make the zip file
         target = os.path.join(dir_path, file_name + ".zip")
+        logger.info("archiving files")
         self.archive_files_into_zip(target, dir_path)
         # next, re-open it and read it's file listing, remove all files successfully archived to
         # the zip
+        logger.info("removing saved files")
         self.remove_archived_files(target, dir_path)
         try:
-            logger.info(f"processing {dir_path}")
+            logger.info(f"processing malware in {dir_path}")
             malware_archive_path = self.find_malware_path(target)
-            changed_archive = self.extract_interesting_files(target, dir_path, malware_archive_path)
+            logger.info(f"malware archive path is {malware_archive_path}")
+            changed_archive = self.extract_interesting_files(target, malware_archive_path)
+            logger.info(f"changed archive {changed_archive}")
             if changed_archive:
                 logger.info("sending updated malware zip to archiver")
                 self.send_zip_to_archiver(malware_archive_path)
@@ -176,15 +182,16 @@ class Collector:
         yesterday = today - datetime.timedelta(days=1)
         yesterday_dirpath = os.path.join(self.path, str(yesterday.year), str(yesterday.month), str(yesterday.day))
         today_dirpath = os.path.join(self.path, str(today.year), str(today.month), str(today.day))
-        for (dirpath, dirnames, filename) in os.walk(self.path):
-            full_dirpath = os.path.join(self.path, dirpath)
-            if full_dirpath in (today_dirpath, yesterday_dirpath):
+        for (dirpath, dirnames, filenames) in os.walk(self.path):
+            if dirpath in (today_dirpath, yesterday_dirpath):
                 # skip today and yesterday, since they might still be getting written.
                 continue
-            elif (not dirnames) or (dirnames == ['decoded', ]):
+            elif filenames:
                 # this is the bottom of the tree, run the decode here:
-                last_name = os.path.split(full_dirpath)[1]
-                self.zip_dir(full_dirpath, last_name)
+                logger.info(f"working on {dirpath}")
+                last_name = os.path.split(dirpath)[-1]
+                self.zip_dir(dirpath, last_name)
+                logger.info(f"finished working on {dirpath}")
             else:
                 # don't do the decode elsewhere
                 continue
