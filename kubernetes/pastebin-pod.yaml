@@ -16,9 +16,8 @@ spec:
     spec:
       volumes:
         - name: pastes
-          nfs:
-            server: 192.168.1.29
-            path: /mnt/DroboFS/Shares/paste
+          persistentVolumeClaim:
+            claimName: pastebin-pvc
       containers:
         - name: pastebin-scraper
           image: gclef/pastebin:1.3
