@@ -20,7 +20,7 @@ spec:
             claimName: pastebin-pvc
       containers:
         - name: pastebin-scraper
-          image: gclef/pastebin:1.4
+          image: gclef/pastebin:1.6
           imagePullPolicy: "IfNotPresent"
           volumeMounts:
             - name: pastes
